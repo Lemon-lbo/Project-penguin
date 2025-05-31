@@ -15,13 +15,20 @@ Here's the link to R Shiney [Dashboard](https://trishita-patra.shinyapps.io/Proj
 - **Source**: [Kaggle – Palmer Archipelago Penguin Data](https://www.kaggle.com/datasets/parulpandey/palmer-archipelago-antarctica-penguin-data?resource=download)
 - Originally collected by Dr. Kristen Gorman.
 
-## Tools & Technologies
+## Tools & Libraries Used
 
-- R – Data analysis and statistical computing
-- Shiny – For building the interactive web dashboard
-- tidyverse – Collection of R packages for data science
-    - tidyr – For reshaping and tidying data
-    - dplyr – For data manipulation
-    - ggplot2 – For creating elegant visualizations
-- shinydashboard – For structured dashboard layout
+The project was developed using the R programming language along with the following packages:
+
+- **Base R** – Data manipulation and scripting
+- **tidyverse** – Data science toolkit (includes `dplyr`, `ggplot2`, `readr`, etc.)
+- **dplyr** – Data wrangling and summary statistics
+- **ggplot2** – Data visualization
+- **mgcv** – Generalized Additive Models
+- **GGally** – Enhanced pairwise plots and correlation analysis
+- **gridExtra** – For arranging multiple plots in custom layouts
+- **ggcorrplot** – Correlation matrix visualizations
+- **knitr** – Dynamic report generation
+- **shiny** – Interactive web application framework
+- **shinydashboard** – Dashboard layout and UI components for Shiny apps
+
 
