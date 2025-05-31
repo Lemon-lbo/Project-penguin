@@ -1,0 +1,507 @@
+---
+title: "Penguin Pursuits: Alice's Visual Adventure"
+author: "Trishita Patra"
+date: "MDS202440"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+<!--
+"Through the Looking Glass: Visualizing the Palmer Penguins Dataset." | Change 13.09.24-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+<!-- comment style: HTML
+Bold : # , ** _ ** 
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+-->
+
+## Abstract: 
+“Curiouser and curiouser!” In a twist of fate, if Alice ventured into the Palmer Archipelago, she would encounter the fascinating world of penguins. With a dataset at her disposal, she'd embark on a quest to explore the unique identities of three species: Adélie, Chinstrap, and Gentoo penguins. This study examines their physical characteristics, distribution, and the intriguing correlations among their measurements—an adventure through the lens of data! 
+
+<!--
+Alice is likely to befreind one of the penguins!By learning about the body size measurements of her newfound friend, Alice may make educated guesses regarding their species! Through the following visualizations, she might even encounter some statistical paradoxes along the way!
+
+If Alice stumbled upon a hole leading to the Palmer Archipelago, and found herself surrounded by adorable penguins, valiantly adapting to their harsh environment, she would certainly befriend one! Provided Alice manages to get hold of the the Palmer Penguins dataset, with one of these charming creatures as her companion, she would no doubt dive into to uncover their identities. This study focuses on three species: Adélie, Chinstrap, and Gentoo penguins, aiming to explore the relative differences in their physical characteristics, distribution, and correlations between various measurements. By learning about the body size measurements of her newfound friend, Alice may make educated guesses regarding their species! Through the following visualizations, she might even encounter some statistical paradoxes along the way!
+-->
+
+## Introduction:
+The Palmer Penguins dataset provides a set of body size measurements for three penguin species—Adélie, Gentoo, and Chinstrap—collected from 2007 to 2009 in the Palmer Archipelago, Antarctica.  It consists of 344 observations with variables such as body mass, flipper length, and culmen dimensions. This analysis aims to uncover differences between species and sex while exploring correlations among these physical measurements.Through the visual journey of data analysis, we hope to illuminate the unique characteristics of these remarkable birds, providing insights that might even help Alice make educated guesses about the species of her newfound friends. Who knows, she might even encounter some statistical paradox along the way!
+
+## Data description:
+The dataset, available \href{https://www.kaggle.com/datasets/parulpandey/palmer-archipelago-antarctica-penguin-data?resource=download}{\textcolor{blue}{here}}, contains biological and geographical data on the three penguin species. It includes 17 columns and 344 observations, focusing on 7 variables (3 categorical and 4 numerical) corresponding to 333 observations after excluding missing values. The selected variables provide insights into the physical characteristics of the penguins and are straightforward to interpret. Additionally, the correlation matrix reveals significant correlations among these variables.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+## Obtaining the data from the excel files downloaded from kaggle
+library(ggplot2)
+library(mgcv)
+library(dplyr)  ## For Statistics
+library(tidyverse)
+library(GGally)
+library(gridExtra)   ## To use minipage
+library(ggcorrplot)
+library(knitr)    
+
+p_lter <- read.csv("C:\\Users\\trish\\Desktop\\Sem1\\Visualization\\Penguin Project\\penguins_lter.csv")
+
+p_size1 <- read.csv("C:\\Users\\trish\\Desktop\\Sem1\\Visualization\\Penguin Project\\penguins_size.csv")
+
+## Remove rows with missing or incorrect 'sex' values
+p_size <- p_size1 %>%    
+  drop_na(sex) %>%                       # Remove rows with NA in 'sex' column
+  filter(sex %in% c("MALE", "FEMALE"))   # Keep only valid entries: 'male' or 'female'
+
+#p_lter <- p_lter1 %>%    
+#  drop_na(sex) %>%                       # Remove rows with NA in 'sex' column
+#  filter(sex %in% c("MALE", "FEMALE"))   # Keep only valid entries: 'male' or 'female'
+## p_size contains the clean data
+kable(head(p_size), caption = "The Penguin Dataset")
+```
+
+The **Species** variable identifies the penguin species, while the **Island** variable indicates its specific island in the archipelago (Biscoe, Dream, or Torgersen). The **Sex** variable denotes the sex of the penguin (female or male). The numerical measurements: **Culmen Length** and **Culmen Depth** (both in millimeters) represent the bill's size, and the **Flipper Length** (in millimeters) measures the flipper's length. Finally, the **Body Mass** variable indicates the penguin's weight in grams.
+
+
+## Exploratory Data Analysis:
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+species = p_size$species
+island = p_size$island
+sex = p_size$sex
+culmen_length = p_size$culmen_length_mm
+culmen_depth = p_size$culmen_depth_mm
+flipper_length = p_size$flipper_length_mm
+body_mass = p_size$body_mass_g
+
+## Setting colours | c = combine/concatenate the colour values in the array
+
+male_c = "lightblue"       ##  Sex colours
+female_c = "lightcoral"
+male_c_fit = "lightblue4"  ## Colours for fitting by sex 
+female_c_fit = "coral4"
+ad_c = "wheat"             ## Species colour
+ch_c = "lightgreen"
+gen_c = "plum"
+ad_c_fit = "yellow3"       ## Colours for fitting by species 
+ch_c_fit = "green4"
+gen_c_fit = "red4"
+
+## Note that Named vector would eliminate any error which may cause from different input sequence of elements of attributes.
+colour_sex <- c(male_c, female_c)      
+colour_sex_fit <- c(male_c_fit, female_c_fit) 
+colour_species <- c(ad_c, ch_c, gen_c) 
+colour_species_fit <- c( ad_c_fit, ch_c_fit, gen_c_fit) 
+```
+
+```{r,fig.width= 6, fig.height=2, warning=FALSE, message=FALSE}
+
+#  Bar plot of of distribution of certain feature, highlighing another feature(fill_by)
+
+bar_plot_fill <- function(data_set, feature, fill_by, colour_list, plot_title, x_label, legend_title){
+  unique_fill_by <- unique(fill_by)
+  # Check if the length of colour_list matches the number of unique features
+  if (length(colour_list) != length(unique_fill_by)) {
+    stop("Length of colour_list must match the number of unique feature values.")
+  }
+  colour_fill_values <- setNames(colour_list, unique_fill_by) # To be used in scale_fill_manual
+  result <- ggplot(data_set, aes(feature, fill = fill_by)) +
+    geom_bar(color = "black", position = "stack") +  # Black border for all bars
+    scale_fill_manual( values = colour_fill_values) +  # Custom fill colors
+    geom_text(stat = "count", aes(label = ..count..), position = position_stack(vjust = 0.5), size = 2) +  # Add counts in the middle of the stacked bars | The ..count.. notation is a special syntax in ggplot2 that represents the computed count of observations for each group.
+    theme_minimal() + 
+    ggtitle(plot_title) +
+    labs(x = x_label , y = "Count", fill = legend_title) + 
+    theme(plot.title = element_text(size = 10, hjust = 0.5),
+          axis.title.x = element_text(size = 8),         # Reduce x-axis label font size
+          axis.title.y = element_text(size = 8),         # Reduce y-axis label font size
+          axis.text.x = element_text(size = 6),          # Reduce x-axis tick mark font size
+          axis.text.y = element_text(size = 6),
+          legend.title = element_text(size = 8),         # Reduce legend title font size
+          legend.text = element_text(size = 6)) +   
+    coord_flip()  # Flip x and y axes
+  
+  return(result)
+}
+
+p1 <- bar_plot_fill(p_size, species, sex, colour_sex, "Species Distribution With Gender Representation", "Species", "Sex")
+p2 <- bar_plot_fill(p_size, island, species, colour_species, "Species Distribution Across Islands", "Islands", "Species")
+
+p1
+p2
+## To arrange the plots side by side
+## grid.arrange(p1, p2, ncol = 2, top = "Distribution of Penguins Across Species and Islands" )
+```
+
+We look at the **distribution** of the four numerical variables for the three **species**, which exhibit centralization tendencies. The peak of the **Gaussian** curve represents the average (mean) value for each species, indicating where most penguins cluster regarding traits like body mass and flipper length.
+
+```{r,fig.width= 3.2, fig.height=3, warning=FALSE, message=FALSE}
+num_char_hist <- function(data_set, feature, fill_by, colour_list, colour_list_fit, plot_title, x_label, y_label, legend_title) {
+  
+  # Ensure feature and fill_by are valid columns in data_set
+  if (!any(feature %in% names(data_set))) {
+    stop(paste("Feature column", feature, "not found in the dataset."))
+  }
+  
+  if (!any(fill_by %in% names(data_set))) {
+    stop(paste("Fill_by column", fill_by, "not found in the dataset."))
+  }
+  
+  unique_fill_by <- unique(data_set[[fill_by]])  
+  colour_list_fit <- setNames(colour_list_fit, unique_fill_by)
+  
+  if (length(colour_list) != length(unique_fill_by)) {
+    stop("Length of colour_list must match the number of unique feature values.")
+  }
+  
+  colour_fill_values <- setNames(colour_list, unique_fill_by)
+  
+  result <- ggplot(data_set, aes_string(x = feature, fill = fill_by)) +
+    geom_histogram(aes(y = ..density..), 
+                   alpha = 0.5, 
+                   position = "identity", 
+                   bins = 30) + 
+    scale_fill_manual(values = colour_fill_values) + 
+    labs(title = plot_title, x = x_label, y = y_label, fill = legend_title) +
+    theme_minimal() + 
+    theme(plot.title = element_text(size = 10, hjust = 0.5),
+          axis.title.x = element_text(size = 8),         
+          axis.title.y = element_text(size = 8),         
+          axis.text.x = element_text(size = 6),          
+          axis.text.y = element_text(size = 6),
+          legend.title = element_text(size = 8),         
+          legend.text = element_text(size = 6),          
+          legend.position = "bottom")                   
+  
+  for (fill_by_ele in unique_fill_by) {
+    filtered_data <- data_set[data_set[[fill_by]] == fill_by_ele, ]
+    
+    mean_feature <- mean(filtered_data[[feature]], na.rm = TRUE)
+    sd_feature <- sd(filtered_data[[feature]], na.rm = TRUE)
+    
+    result <- result +
+      stat_function(
+        data = data.frame(feature = seq(min(data_set[[feature]], na.rm = TRUE), 
+                                        max(data_set[[feature]], na.rm = TRUE), length.out = 100)),
+        aes(x = feature), 
+        fun = dnorm, 
+        args = list(mean = mean_feature, sd = sd_feature),
+        color = colour_list_fit[fill_by_ele],  
+        size = 1,
+        inherit.aes = FALSE)  # Prevent inheritance of fill aesthetic
+  }
+  return(result)
+}
+
+# Recreate your histograms
+body_mass_hist <- num_char_hist(p_size, "body_mass_g", "species", colour_species, colour_species_fit, 
+                                "Distribution of Body Mass", "Body Mass (g)", "Density", "Species")
+
+flip_len_hist <- num_char_hist(p_size, "flipper_length_mm", "species", colour_species, colour_species_fit, 
+                               "Distribution of Flipper Length", "Flipper Length (mm)", "Density", "Species")
+
+cul_len_hist <- num_char_hist(p_size, "culmen_length_mm", "species", colour_species, colour_species_fit, 
+                              "Distribution of Culmen Length", "Culmen Length (mm)", "Density", "Species")
+
+cul_dep_hist <- num_char_hist(p_size, "culmen_depth_mm", "species", colour_species, colour_species_fit, 
+                              "Distribution of Culmen Depth", "Culmen Depth (mm)", "Density", "Species")
+
+# Print the histograms
+print(body_mass_hist)
+print(flip_len_hist)
+```
+
+```{r,fig.width= 3.2, fig.height=3, warning=FALSE, message=FALSE}
+print(cul_len_hist)
+print(cul_dep_hist)
+```
+
+Now we examine how each numerical trait—body mass, flipper length, culmen length, and culmen depth—is distributed across sexes within each species. The presence of separate Gaussian curves for males and females highlights differences in central tendencies, with peak positions indicating the average values and revealing subtle or pronounced **dimorphism** in these physical characteristics.
+
+```{r message=FALSE, warning=FALSE, 6, fig.height=2.5}
+num_char_hist_fac <- function(data_set, feature, fill_by, colour_list, colour_list_fit, plot_title, x_label, y_label, legend_title, facet_by) {
+  
+  # Ensure valid columns
+  if (!all(c(feature, fill_by, facet_by) %in% names(data_set))) {
+    stop("Ensure 'feature', 'fill_by', and 'facet_by' are valid columns in the dataset.")
+  }
+  
+  # Extract unique values
+  unique_fill_by <- unique(data_set[[fill_by]])  
+  unique_facets <- unique(data_set[[facet_by]])
+  
+  # Map colors
+  colour_fill_values <- setNames(colour_list, unique_fill_by)
+  colour_list_fit <- setNames(colour_list_fit, unique_fill_by)
+  
+  # Create a container for Gaussian data
+  gaussian_data <- list()
+  
+  # Calculate Gaussian curve data per facet and fill_by
+  for (facet in unique_facets) {
+    for (fill_by_val in unique_fill_by) {
+      filtered_data <- data_set[data_set[[facet_by]] == facet & data_set[[fill_by]] == fill_by_val, ]
+      if (nrow(filtered_data) > 1) { # Only add curve if sufficient data
+        gaussian_data[[paste(facet, fill_by_val, sep = "_")]] <- list(
+          mean = mean(filtered_data[[feature]], na.rm = TRUE),
+          sd = sd(filtered_data[[feature]], na.rm = TRUE),
+          range = range(filtered_data[[feature]], na.rm = TRUE)
+        )
+      }
+    }
+  }
+  
+  # Initialize plot with histogram
+  result <- ggplot(data_set, aes_string(x = feature, fill = fill_by)) +
+    geom_histogram(aes(y = ..density..), alpha = 0.75, position = "identity", bins = 30) +
+    scale_fill_manual(values = colour_fill_values) +
+    facet_wrap(as.formula(paste("~", facet_by))) +
+    labs(title = plot_title, x = x_label, y = y_label, fill = legend_title) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 10, hjust = 0.5),
+      axis.title.x = element_text(size = 8),
+      axis.title.y = element_text(size = 8),
+      axis.text.x = element_text(size = 6),
+      axis.text.y = element_text(size = 6),
+      legend.title = element_text(size = 8),
+      legend.text = element_text(size = 6),
+      legend.position = "bottom"
+    )
+  
+# Generate combined Gaussian curve data
+curve_df_all <- data.frame()
+
+for (facet in unique_facets) {
+  for (fill_by_val in unique_fill_by) {
+    key <- paste(facet, fill_by_val, sep = "_")
+    if (!is.null(gaussian_data[[key]])) {
+      curve_data <- gaussian_data[[key]]
+      x_vals <- seq(curve_data$range[1], curve_data$range[2], length.out = 100)
+      y_vals <- dnorm(x_vals, mean = curve_data$mean, sd = curve_data$sd)
+      
+      temp_df <- data.frame(
+        x = x_vals,
+        y = y_vals,
+        facet_value = facet,
+        fill_by_value = fill_by_val
+      )
+      curve_df_all <- rbind(curve_df_all, temp_df)
+    }
+  }
+}
+  
+  return(result)
+}
+
+# Create faceted histograms
+body_mass_hist_sex_sp <- num_char_hist_fac(
+  p_size, 
+  "body_mass_g", 
+  "sex", 
+  colour_sex, 
+  colour_sex_fit, 
+  "Distribution of Body Mass by Sex and Species", 
+  "Body Mass (g)", 
+  "Density", 
+  "Sex", 
+  facet_by = "species"
+)
+
+flipper_len_hist_sex_sp <- num_char_hist_fac(
+  p_size, 
+  "flipper_length_mm", 
+  "sex", 
+  colour_sex, 
+  colour_sex_fit, 
+  "Distribution of Flipper Length by Sex and Species", 
+  "Flipper Length (mm)", 
+  "Density", 
+  "Sex", 
+  facet_by = "species"
+)
+
+cul_len_hist_sex_sp <- num_char_hist_fac(
+  p_size, 
+  "culmen_length_mm", 
+  "sex", 
+  colour_sex, 
+  colour_sex_fit, 
+  "Distribution of Culmen Length by Sex and Species", 
+  "Culmen Length (mm)", 
+  "Density", 
+  "Sex", 
+  facet_by = "species"
+)
+
+cul_dep_hist_sex_sp <- num_char_hist_fac(
+  p_size, 
+  "culmen_depth_mm", 
+  "sex", 
+  colour_sex, 
+  colour_sex_fit, 
+  "Distribution of Culmen Depth by Sex and Species", 
+  "Culmen Depth (mm)", 
+  "Density", 
+  "Sex", 
+  facet_by = "species"
+)
+
+# Print the histograms
+print(body_mass_hist_sex_sp)
+print(flipper_len_hist_sex_sp)
+print(cul_len_hist_sex_sp)
+print(cul_dep_hist_sex_sp)
+
+```
+
+We examine the correlation between numeric variables, specifically focusing on easily interpretable body measurements. From the following matrix, Strong positive correlations are observed among flipper length ~ body mass, as well as flipper length ~ culmen length, and culmen length ~ body mass. Additionally, there is a notable negative correlation between flipper length ~ culmen depth. 
+
+```{r,echo = FALSE, warning=FALSE, message=FALSE, fig.height= 3.15}
+# Check for missing values
+#colSums(is.na(p_lter))
+
+# Recompute correlation matrix using pairwise complete observations
+cor_matrix <- cor(p_lter[, sapply(p_lter, is.numeric)], use = "pairwise.complete.obs")
+
+# Create a heatmap of the correlation matrix (upper triangle)
+ggcorrplot(cor_matrix,
+           lab = TRUE,
+           lab_size = 2.5, 
+           colors = c("red", "white", "blue"), 
+           title = "Correlation Heatmap"
+           ) +  
+  theme(plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title.x = element_text(size = 8),         # Reduce x-axis label font size
+        axis.title.y = element_text(size = 8),         # Reduce y-axis label font size
+        axis.text.x = element_text(size = 8),          # Reduce x-axis tick mark font size
+        axis.text.y = element_text(size = 8),
+        legend.title = element_text(size = 8),         # Reduce legend title font size
+        legend.text = element_text(size = 6),
+        panel.grid.major = element_blank(),            # Remove major grid lines
+        panel.grid.minor = element_blank(),            # Remove minor grid lines
+        panel.background = element_rect(fill = "white", color = NA)  # Optional: Set background to white
+    )
+```
+
+We will visualize the relationships between body mass and flipper length, as well as flipper length and culmen depth, both overall and faceted by species. Coloring by sex helps differentiate between the characteristics of males and females.Faceting by species allows for easy comparison between subsets of the data, showing how the traits differ across groups (Adelie, Gentoo, Chinstrap).
+
+```{r,fig.width=3.5, fig.height=4,echo =FALSE, warning=FALSE, message=FALSE}
+
+# Create the scatter plot for Flipper Length vs. Body Mass | Positive correlation
+var1_scatter_var2_facet <- function(data_set, var1, var2, colour_by, facet_by, colour_list, colour_list_fit, plot_title, x_label, y_label, legend_title) {
+  
+  # Ensure unique values of the colour_by variable
+  unique_fill_by <- unique(data_set[[colour_by]])  
+  
+  # Name the color list based on unique_fill_by categories
+  colour_list_fit <- setNames(colour_list_fit, unique_fill_by)
+  colour_fill_values <- setNames(colour_list, unique_fill_by)  
+  
+  # Check length of colour_list
+  if (length(colour_list) != length(unique_fill_by)) {
+    stop("Length of colour_list must match the number of unique feature values.")
+  }
+
+  # Base plot with scatter points
+  result <- ggplot(data_set, aes(x = .data[[var1]], y = .data[[var2]], color = .data[[colour_by]])) +
+    geom_point() +  # Scatter points
+    scale_color_manual(values = colour_fill_values) +  # Custom color mapping for points
+
+    # Adding smooth lines for each unique category in colour_by
+    lapply(unique_fill_by, function(fill_by_ele) {
+      geom_smooth(data = data_set[data_set[[colour_by]] == fill_by_ele, ], 
+                  aes(group = .data[[colour_by]]), 
+                  method = "lm", se = FALSE, 
+                  color = colour_list_fit[fill_by_ele], show.legend = FALSE)
+    }) + 
+    facet_wrap(as.formula(paste("~", facet_by))) +  # Create separate panels for each facet_by
+    labs(title = plot_title,
+         x = x_label,
+         y = y_label, fill = legend_title) +
+    theme_minimal() +  # Minimal theme for the plot
+    scale_x_continuous(breaks = seq(170, 230, by = 30)) +  # Set fewer x-axis breaks
+    theme(plot.title = element_text(size = 9, hjust = 0.5),
+          axis.title.x = element_text(size = 8),
+          axis.title.y = element_text(size = 8),
+          axis.text.x = element_text(size = 6),
+          axis.text.y = element_text(size = 6),
+          legend.title = element_text(size = 8),
+          legend.text = element_text(size = 6),
+          legend.position = "bottom") 
+  
+  return(result)
+}
+
+flip_len_scatter_body_mass_facet <- var1_scatter_var2_facet(p_size, "flipper_length_mm","body_mass_g", "sex", "species", colour_sex, colour_sex_fit, "Body Mass vs. Flipper Length by Sex and Species", "Flipper Length (mm)", "Body mass (g)", "Sex")
+
+flip_len_scatter_body_mass_facet
+```
+```{r,fig.width=2.5, fig.height=4,echo =FALSE, warning=FALSE, message=FALSE}
+# Create the scatter plot for Body Mass vs. Flipper Length
+
+var1_scatter_var2 <- function(data_set, var1, var2, plot_title, x_label, y_label) {
+
+  result <- ggplot(data_set, aes(x = .data[[var1]], y = .data[[var2]])) +
+  geom_point() +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE) +  # Linear model fit line without confidence interval
+  labs(title = plot_title,
+       x = x_label,
+       y = y_label) +
+  theme_minimal()  + # Minimal theme for the plot 
+  theme(plot.title = element_text(size = 9,hjust = 0.5),
+    axis.title.x = element_text(size = 8),         # Reduce x-axis label font size
+    axis.title.y = element_text(size = 8),         # Reduce y-axis label font size
+    axis.text.x = element_text(size = 6),          # Reduce x-axis tick mark font size
+    axis.text.y = element_text(size = 6))
+  
+  return(result)
+}
+
+flip_len_scatter_body_mass <- var1_scatter_var2(p_size, "flipper_length_mm","body_mass_g","Body Mass vs. Flipper Length", "Flipper Length (mm)", "Body mass (g)")
+
+flip_len_scatter_body_mass
+```
+
+```{r,fig.width=3.5, fig.height=4,echo =FALSE, warning=FALSE, message=FALSE}
+
+# Create the scatter plot for Flipper Length vs. Culmen Depth | Negative correlation
+
+flip_len_scatter_cul_dep_facet <- var1_scatter_var2_facet(p_size, "flipper_length_mm","culmen_depth_mm", "sex", "species", colour_sex, colour_sex_fit, "Culmen Depth vs. Flipper Length by Sex and Species", "Flipper Length (mm)", "Culmen Depth (mm)", "Sex")
+
+flip_len_scatter_cul_dep_facet
+```
+```{r,fig.width=2.5, fig.height=4,echo =FALSE, warning=FALSE, message=FALSE}
+# Create the scatter plot for Flipper Length vs. Culmen Depth
+flip_len_scatter_cul_dep <- var1_scatter_var2(p_size, "flipper_length_mm","culmen_depth_mm", "Culmen Depth vs. Flipper Length", "Flipper Length (mm)", "Culmen Depth (mm)")
+
+flip_len_scatter_cul_dep
+```
+
+## Results and Discussion:
+From the EDA, we observe the following: 
+\begin{itemize}
+  \item The sex ratio across species is nearly 1:1.  
+  \item The Adélie species is present on all three islands, while the Chinstrap and Gentoo are found only on Dream and Biscoe islands, respectively.  
+  \item The centralization tendency of the numerical variables is insightful. For example, body mass distribution shows that most individuals are around an average mass, with fewer being very light or heavy; one species tends to be heavier (i.e., a higher mean).  
+  \item In our sample, the number of penguins is: Adélie > Gentoo > Chinstrap.  
+  \item Average flipper length order: Adélie < Chinstrap < Gentoo.  
+  \item Average body mass order: Adélie $\sim$ Chinstrap < Gentoo.  
+  \item Average culmen length order: Adélie < Gentoo < Chinstrap.  
+  \item Average culmen depth order: Gentoo < Adélie $\sim$ Chinstrap. 
+  \item \textbf{Sexual dimorphism} is evident across all species for the four key body measurements: on average, male penguins have greater body mass, flipper length, culmen length, and culmen depth compared to females.
+  \item The correlation matrix reveals the highest positive correlation between body mass and flipper length, and the highest negative correlation between flipper length and culmen depth. The plots illustrate these correlations, but when faceted by species (and applicable for each sex), a positive correlation between flipper length and culmen depth emerges, illustrating \textbf{Simpson's paradox}.  
+\end{itemize}
+
+## Conclusion:
+
+The analysis shows that, in addition to inter-species differences, the data reveals clear sexual dimorphism: males tend to be larger than females across all four measured traits and all three species. Through visualizations, we confirmed a correlation between body measurements. Interestingly, we observe Simpson’s Paradox in the scatter plot for Culmen Depth vs. flipper length when viewed across species and sex. While individual species show positive trends, the overall correlation across all penguins might give the false impression of a weaker relationship due to differences between species. This emphasizes the importance of analyzing data by subgroups to avoid misleading conclusions. Hopefully both Alice and the reader enjoyed the exploration!
+
+## Referances: 
+1. Gorman, K. B., Williams, T. D., & other collaborators. (2019). Palmer Penguins: A dataset for the study of penguins in the Antarctic. Retrieved from \href{palmerpenguins.github.io}{\textcolor{blue}{here}}.
+2. Palmer Archipelago Penguins Data in the \href{https://journal.r-project.org/articles/RJ-2022-020/}{\textcolor{blue}{palmerpenguins}} R Package - An Alternative to Anderson’s Irises.
+
+<!--  .....................................KEEP IN MIND.....................................
+Always write abstract last. It's elevator speech. In corporate you call it summary.
+Nobody has time to read the report, they will read it only if abstract can garner enough attention and curiosity. Write Introduction second last. 
+-->
