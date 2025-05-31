@@ -1,4 +1,4 @@
-# Project: Penguin EDA & Visualization
+# Project Penguin : EDA & Visualization
 
 This project analyzes the **Palmer Penguins** dataset, focusing on body size measurements of *Adélie*, *Gentoo*, and *Chinstrap* penguins. The analysis is performed in **R**, with emphasis on aesthetic data visualization and exploratory analysis *to support understanding of the biological and statistical insights within the dataset*.
 
