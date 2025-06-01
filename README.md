@@ -31,4 +31,12 @@ The project was developed using the R programming language along with the follow
 - **shiny** – Interactive web application framework
 - **shinydashboard** – Dashboard layout and UI components for Shiny apps
 
+## Repository Structure
+
+- `project_penguin.Rmd`: Contains code for data preprocessing, visualization, and statistical analysis.
+- `project_penguin.pdf`: A PDF version of the final report generated from the `.Rmd` file.
+- `myAPP/app.R`: R code for the interactive Shiny dashboard.
+- `myAPP/www/`: Holds images used in the dashboard UI.
+- `myAPP/*.csv`: Dataset files corresponding to the Palmer Penguins dataset.
+
 
