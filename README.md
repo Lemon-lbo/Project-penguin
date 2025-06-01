@@ -2,7 +2,7 @@
 
 This project analyzes the **Palmer Penguins** dataset, focusing on body size measurements of *Adélie*, *Gentoo*, and *Chinstrap* penguins. The analysis is performed in **R**, with emphasis on aesthetic data visualization and exploratory analysis *to support understanding of the biological and statistical insights within the dataset*.
 
-Here's the link to R Shiney [Dashboard](https://trishita-patra.shinyapps.io/ProjectPenguin/).
+Here's the link to interactive R Shiney [Dashboard](https://trishita-patra.shinyapps.io/ProjectPenguin/).
 ## Highlights
 
 - Examines species-wise and sex-wise differences in physical features
