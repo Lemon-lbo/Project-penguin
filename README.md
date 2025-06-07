@@ -23,6 +23,7 @@ The project was developed using the R programming language along with the follow
 - **tidyverse** – Data science toolkit (includes `dplyr`, `ggplot2`, `readr`, etc.)
 - **dplyr** – Data wrangling and summary statistics
 - **ggplot2** – Data visualization
+- **plotly** - 3D plotting
 - **mgcv** – Generalized Additive Models
 - **GGally** – Enhanced pairwise plots and correlation analysis
 - **gridExtra** – For arranging multiple plots in custom layouts
