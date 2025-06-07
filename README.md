@@ -44,7 +44,7 @@ The project was developed using the R programming language along with the follow
 This repository is licensed under the [CC BY-NC 4.0 License](https://creativecommons.org/licenses/by-nc/4.0/).  
 You may use, modify, and share this work **non-commercially**, with proper attribution.
 
-## Completetion Date
+## Completion Date
 This project was originally completed in December 2024.
 
 
